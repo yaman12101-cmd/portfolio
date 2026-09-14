@@ -1,0 +1,12 @@
+# OS が作る作業用ファイル
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# エディタ
+.vscode/
+.idea/
+*.swp
+
+# 動画・画像の元データ（サイズが大きいので公開対象外にする場合はここに置く）
+/source/
