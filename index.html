@@ -256,11 +256,14 @@ dialog.modal::backdrop{background:rgba(78,63,51,.45);backdrop-filter:blur(4px)}
 .modal-body p{color:var(--brown-soft);margin-bottom:12px;line-height:1.85}
 #modalDesc{margin-bottom:18px}
 #modalDesc p:last-child{margin-bottom:0}
-.modal-videos{display:grid;gap:18px;margin:4px 0 20px}
+.modal-videos{display:grid;grid-template-columns:1fr;gap:18px;margin:4px 0 20px;max-width:100%}
 @media(min-width:680px){
-  .modal-videos[data-count="2"]{grid-template-columns:repeat(2,1fr);gap:16px}
-  .modal-videos figure.wide{grid-column:1/-1}
+  .modal-videos:not([data-count="0"]):not([data-count="1"]){grid-template-columns:repeat(2,1fr);gap:16px}
 }
+@media(min-width:1024px){
+  .modal-videos:not([data-count="0"]):not([data-count="1"]):not([data-count="2"]){grid-template-columns:repeat(3,1fr)}
+}
+.modal-videos figure{min-width:0}
 /* 資料スライド：縦横比はそのまま、クリックで原寸表示 */
 .modal-videos .media-shot{aspect-ratio:auto;display:block;background:#0d0b0a;cursor:zoom-in}
 .modal-videos .media-shot img{width:100%;height:auto;display:block;object-fit:contain}
@@ -982,7 +985,7 @@ function openModal(w) {
 
   clips.sort((a, b) => (a.wide ? 1 : 0) - (b.wide ? 1 : 0)); // 動画を先に、資料は下にまとめる
   const mv = document.getElementById("modalVideos");
-  mv.dataset.count = clips.filter(c => !c.wide).length;  // 列数は動画の本数で決める（資料は横いっぱい）
+  mv.dataset.count = clips.length;  // 列数は動画・資料の合計数で決める（すべて横並び）
   mv.innerHTML = clips.map(c => `
     <figure${c.wide ? ' class="wide"' : ""}>
       ${c.html}
