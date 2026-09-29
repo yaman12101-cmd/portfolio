@@ -596,14 +596,14 @@ footer .sig{margin-top:40px;font-family:var(--mono);font-size:10px;letter-spacin
       <div class="sec-head rv">
         <span class="tag">01 / AGENT OPS</span>
         <h2>AIエージェント司令室</h2>
-        <p>依頼が入ると、5人が順番に動きます。調べる人、疑う人、値段を見る人、止める人、整える人。<br>キャラクターに触れると、人となりが少しだけ見えます。</p>
+        <p>調査、裏取り、値付け、法務、資料作り。各分野のスペシャリストが揃っています。<br>普段は静かに待機、必要な時には呼ばれた分野のプロがきっちり仕事をします。<br>キャラクターに触れると、人となりが少しだけ見えます。</p>
       </div>
 
       <div class="stage-scroll rv" id="stageScroll">
         <div class="stage" id="stage">
           <div class="cell-label a">RESEARCH CELL</div>
           <div class="cell-label b">REVIEW ─ 並行チェック</div>
-          <div class="cell-label c">FINISH</div>
+          <div class="cell-label c">DOCS</div>
           <div class="wire" id="wire" aria-hidden="true"></div>
           <div class="packet" id="packet" aria-hidden="true"></div>
         </div>
@@ -706,7 +706,7 @@ footer .sig{margin-top:40px;font-family:var(--mono);font-size:10px;letter-spacin
           <span class="idx">EXP-01</span>
           <span class="st live">RUNNING</span>
           <h4>AIエージェント部隊</h4>
-          <p>サブエージェントに人格と役割を持たせ、調査 → 裏取り → 値付け → 法務 → 仕上げを分担させる実験。</p>
+          <p>サブエージェントに人格と役割を持たせ、調査・裏取り・値付け・法務・資料作りを、それぞれの専門家に任せる実験。</p>
         </article>
         <article class="exp">
           <span class="idx">EXP-02</span>
@@ -810,13 +810,13 @@ footer .sig{margin-top:40px;font-family:var(--mono);font-size:10px;letter-spacin
       ]
     },
     joshu: {
-      tag: "校正・仕上げ",
-      team: "AGENT OPS", code: "AGENT 05 // FINISH", no: "05 FINISH", role: "校正・整理・最終仕上げ",
-      name: "助手", img: "joshu.webp", busy: "仕上げ中",
+      tag: "資料作り",
+      team: "AGENT OPS", code: "AGENT 05 // DOCS", no: "05 DOCS", role: "資料作り・まとめ",
+      name: "助手", img: "joshu.webp", busy: "資料作成中",
       quotes: [
-        "はい、整えておきました。",
-        "ここだけ、意味が二通りに取れます。確認してください。",
-        "内容は変えず、読みやすさだけ調整しています。"
+        "はい、資料にまとめておきました。",
+        "結論は1枚目に置いています。",
+        "図にした方が早いので、図にしました。"
       ]
     },
     n1: {
