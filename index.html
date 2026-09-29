@@ -855,7 +855,8 @@ const SKILLS = [
 // 資格が増えたら、この配列に1行足すだけでカードが増えます。
 const CERTS = [
   { name: "Microsoft Office Specialist Excel Expert", note: "" },
-  { name: "生成AIパスポート", note: "" }
+  { name: "生成AIパスポート", note: "" },
+  { name: "G検定", note: "" }
 ];
 
 // ---------- ACTIVITY ----------
@@ -878,6 +879,11 @@ const CONTACT_LINKS = [
 // キーボードでこの文字列を入力すると発動します。
 const SECRET_WORD = "hello";
 const SECRET_MESSAGE = "Hello！";   // 吹き出しに表示する短いメッセージ
+
+// 足元の hello を続けて BACKSIDE_TAPS 回押すと、裏面へ移動します。
+const BACKSIDE_URL = "back/index.html";
+const BACKSIDE_TAPS = 5;
+const BACKSIDE_HINTS = { 3: "……ん？", 4: "あと1回。" };   // 途中で吹き出しに出す一言
 
 /* =========================================================
    ▲▲▲ ここまでが編集エリア ▲▲▲
@@ -1202,7 +1208,30 @@ function runHello() {
 }
 
 // 足元の小さな hello ボタン（クリック／タップで同じ演出）
-document.getElementById("helloBtn").addEventListener("click", runHello);
+// 2.5秒以内に続けて押すとカウントされ、BACKSIDE_TAPS 回で裏面へ。
+let helloTaps = 0, helloTapTimer = null;
+function goBackside() {
+  if (reduce) { location.href = BACKSIDE_URL; return; }
+  const veil = document.createElement("div");
+  veil.setAttribute("aria-hidden", "true");
+  veil.style.cssText = "position:fixed;inset:0;z-index:9999;background:#05070b;opacity:0;transition:opacity .55s ease;" +
+    "display:flex;align-items:center;justify-content:center;font:500 13px/1 ui-monospace,monospace;letter-spacing:.3em;color:#5be7ff";
+  veil.textContent = "ACCESS GRANTED";
+  document.body.appendChild(veil);
+  requestAnimationFrame(() => { veil.style.opacity = "1"; });
+  setTimeout(() => { location.href = BACKSIDE_URL; }, 800);
+}
+document.getElementById("helloBtn").addEventListener("click", () => {
+  helloTaps++;
+  clearTimeout(helloTapTimer);
+  helloTapTimer = setTimeout(() => { helloTaps = 0; }, 2500);
+  if (helloTaps >= BACKSIDE_TAPS) { helloTaps = 0; goBackside(); return; }
+  if (BACKSIDE_HINTS[helloTaps]) {
+    bubble.textContent = BACKSIDE_HINTS[helloTaps];
+    bubble.classList.add("show");
+  }
+  runHello();
+});
 
 // キーボードで hello と打っても発動（隠し要素として残しています）
 document.addEventListener("keydown", e => {

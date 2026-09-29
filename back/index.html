@@ -1,0 +1,1356 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BACKSIDE | AI Command Room</title>
+<meta name="description" content="ポートフォリオの裏側。AIエージェントチームとシナリオ部隊が動く、制作・実験・研究の司令室。">
+<meta name="theme-color" content="#05070b">
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;700&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+/* =========================================================
+   BACKSIDE — AI Command Room
+   ここは表面(../index.html)とは独立したページです。
+   キャラクターの差し替えは下の <script> 内 CHARS を編集してください。
+   ========================================================= */
+:root{
+  --bg:#05070b;
+  --bg2:#0a0e15;
+  --panel:rgba(10,16,26,.72);
+  --ink:#e8eef6;
+  --dim:#8793a5;
+  --faint:#4a5566;
+  --line:rgba(120,190,255,.13);
+  --cy:#5be7ff;
+  --cy-soft:rgba(91,231,255,.16);
+  --am:#ffb547;
+  --am-soft:rgba(255,181,71,.16);
+  --vi:#a594ff;
+  --vi-soft:rgba(165,148,255,.16);
+  --red:#ff4d5e;
+  --grn:#6dffb0;
+  --mono:"JetBrains Mono",ui-monospace,monospace;
+  --disp:"Space Grotesk","Zen Kaku Gothic New",sans-serif;
+  --jp:"Zen Kaku Gothic New","Hiragino Sans",sans-serif;
+  --gut:clamp(16px,4vw,48px);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{
+  background:var(--bg);color:var(--ink);font-family:var(--jp);
+  line-height:1.7;overflow-x:hidden;min-height:100vh;
+  -webkit-font-smoothing:antialiased;
+}
+img{display:block;max-width:100%}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+a{color:inherit}
+::selection{background:var(--cy);color:#000}
+
+/* ---------- 背景：グリッド + 走査線 ---------- */
+.bg-grid{
+  position:fixed;inset:0;z-index:-2;pointer-events:none;
+  background:
+    radial-gradient(1200px 700px at 80% -10%,rgba(91,231,255,.10),transparent 60%),
+    radial-gradient(900px 600px at -10% 60%,rgba(255,181,71,.05),transparent 60%),
+    linear-gradient(var(--line) 1px,transparent 1px) 0 0/56px 56px,
+    linear-gradient(90deg,var(--line) 1px,transparent 1px) 0 0/56px 56px,
+    var(--bg);
+  -webkit-mask-image:radial-gradient(ellipse at 50% 30%,#000 30%,rgba(0,0,0,.35) 80%);
+          mask-image:radial-gradient(ellipse at 50% 30%,#000 30%,rgba(0,0,0,.35) 80%);
+}
+.bg-scan{
+  position:fixed;inset:0;z-index:50;pointer-events:none;opacity:.35;
+  background:repeating-linear-gradient(0deg,rgba(255,255,255,.018) 0 1px,transparent 1px 3px);
+}
+
+/* ---------- 起動演出 ---------- */
+.boot{
+  position:fixed;inset:0;z-index:100;background:#020306;
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--mono);font-size:13px;color:var(--cy);
+  transition:opacity .6s ease,visibility .6s;
+}
+.boot.done{opacity:0;visibility:hidden}
+.boot pre{white-space:pre-wrap;line-height:1.9;min-width:min(420px,86vw)}
+.boot .ok{color:var(--grn)}
+.boot .skip{position:absolute;bottom:24px;left:0;right:0;text-align:center;color:var(--faint);font-size:11px;letter-spacing:.2em}
+
+/* ---------- ヘッダー ---------- */
+.topbar{
+  position:sticky;top:0;z-index:40;
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:12px var(--gut);
+  font-family:var(--mono);font-size:11px;letter-spacing:.14em;color:var(--dim);
+  background:linear-gradient(rgba(5,7,11,.92),rgba(5,7,11,.6));
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--line);
+}
+.topbar a{text-decoration:none;display:inline-flex;align-items:center;gap:8px;transition:color .2s}
+.topbar a:hover{color:var(--ink)}
+.topbar .mid{color:var(--ink);font-weight:500}
+.topbar .mid b{color:var(--cy);font-weight:500}
+.topbar .right{display:flex;align-items:center;gap:10px}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--grn);box-shadow:0 0 10px var(--grn);animation:blink 2.4s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.35}}
+@media (max-width:640px){.topbar .mid{display:none}}
+
+/* ---------- 共通 ---------- */
+section{position:relative;padding:clamp(72px,11vw,140px) var(--gut)}
+.wrap{max-width:1240px;margin:0 auto}
+.sec-head{display:grid;gap:14px;margin-bottom:clamp(36px,5vw,64px);max-width:760px}
+.tag{
+  font-family:var(--mono);font-size:11px;letter-spacing:.24em;color:var(--cy);
+  display:inline-flex;align-items:center;gap:10px;
+}
+.tag::before{content:"";width:28px;height:1px;background:currentColor}
+.sec-head h2{
+  font-family:var(--jp);font-weight:900;letter-spacing:.02em;line-height:1.25;
+  font-size:clamp(30px,5vw,54px);
+}
+.sec-head p{color:var(--dim);font-size:clamp(14px,1.6vw,16px)}
+.hint{font-family:var(--mono);font-size:11px;color:var(--faint);letter-spacing:.1em}
+.hint .k{color:var(--dim);border:1px solid var(--faint);padding:1px 6px;border-radius:3px;margin:0 2px}
+
+/* ---------- HERO ---------- */
+.hero{
+  min-height:calc(100svh - 45px);
+  display:grid;grid-template-columns:1.15fr .85fr;align-items:center;gap:clamp(24px,5vw,64px);
+  max-width:1240px;margin:0 auto;padding-top:clamp(40px,6vw,80px);padding-bottom:clamp(40px,6vw,80px);
+}
+.hero .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.2em;color:var(--dim);margin-bottom:28px}
+.hero .eyebrow b{color:var(--cy);font-weight:500}
+.hero h1{
+  font-family:var(--jp);font-weight:900;line-height:1.12;letter-spacing:.01em;
+  font-size:clamp(34px,6vw,92px);
+}
+.hero h1 span{display:block;white-space:nowrap}
+.hero h1 .l2{color:transparent;-webkit-text-stroke:1px rgba(232,238,246,.55)}
+.hero h1 .l2 em{font-style:normal;color:var(--cy);-webkit-text-stroke:0;text-shadow:0 0 30px rgba(91,231,255,.45)}
+.hero .lead{margin-top:28px;color:var(--dim);max-width:34em;font-size:clamp(14px,1.7vw,17px)}
+.stats{
+  margin-top:40px;display:grid;grid-template-columns:repeat(4,1fr);
+  border-top:1px solid var(--line);border-bottom:1px solid var(--line);
+}
+.stat{padding:16px 12px 14px 0;border-right:1px solid var(--line)}
+.stat + .stat{padding-left:14px}
+.stat:last-child{border-right:0}
+.stat .k{font-family:var(--mono);font-size:10px;letter-spacing:.18em;color:var(--faint);display:block}
+.stat .v{font-family:var(--disp);font-size:clamp(20px,2.6vw,28px);font-weight:500;line-height:1.3;display:block;margin-top:4px}
+.stat .v small{font-size:12px;color:var(--dim);font-family:var(--jp);margin-left:4px}
+.stat .v.cy{color:var(--cy)} .stat .v.am{color:var(--am)}
+.hero-cmd{position:relative;display:flex;justify-content:center}
+.hero-cmd .unit .fig{height:clamp(300px,46vw,560px)}
+.hero-cmd .ring{
+  position:absolute;left:50%;bottom:2%;width:min(420px,90%);aspect-ratio:1/.28;transform:translateX(-50%);
+  border-radius:50%;border:1px solid rgba(91,231,255,.4);
+  box-shadow:0 0 40px rgba(91,231,255,.18),inset 0 0 30px rgba(91,231,255,.12);
+}
+.hero-cmd .ring::after{
+  content:"";position:absolute;inset:16% 12%;border-radius:50%;border:1px dashed rgba(91,231,255,.35);
+  animation:pulse 4s ease-in-out infinite;
+}
+@keyframes pulse{0%,100%{opacity:.35;transform:scale(.96)}50%{opacity:1;transform:scale(1.03)}}
+.hero-cmd .label{
+  position:absolute;top:8%;right:0;font-family:var(--mono);font-size:10px;letter-spacing:.18em;color:var(--dim);
+  text-align:right;line-height:2;
+}
+.hero-cmd .label b{color:var(--cy);font-weight:500;display:block;font-size:11px}
+.scroll-cue{
+  position:absolute;left:50%;bottom:18px;transform:translateX(-50%);
+  font-family:var(--mono);font-size:10px;letter-spacing:.3em;color:var(--faint);
+  display:flex;flex-direction:column;align-items:center;gap:8px;
+}
+.scroll-cue i{width:1px;height:36px;background:linear-gradient(var(--cy),transparent);animation:drop 2s infinite}
+@keyframes drop{0%{transform:scaleY(0);transform-origin:top}50%{transform:scaleY(1);transform-origin:top}51%{transform-origin:bottom}100%{transform:scaleY(0);transform-origin:bottom}}
+@media (max-width:860px){
+  .hero{grid-template-columns:1fr;text-align:left;min-height:auto;padding-bottom:88px}
+  .scroll-cue{display:none}
+  .hero h1{font-size:clamp(34px,11vw,72px)}
+  .hero-cmd{order:-1;margin-bottom:-8px}
+  .hero-cmd .unit .fig{height:clamp(260px,64vw,380px)}
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .stat:nth-child(2){border-right:0}
+  .stat:nth-child(3){padding-left:0}
+  .stat:nth-child(n+3){border-top:1px solid var(--line)}
+}
+
+/* ---------- キャラクターユニット（共通） ---------- */
+.unit{
+  position:relative;display:flex;flex-direction:column;align-items:center;
+  width:100%;outline:none;-webkit-tap-highlight-color:transparent;
+}
+.unit .fig{
+  position:relative;width:100%;height:clamp(220px,24vw,330px);
+  display:flex;align-items:flex-end;justify-content:center;
+}
+.unit .fig img{
+  position:absolute;bottom:14px;left:50%;height:100%;width:auto;max-width:none;
+  transform:translateX(-50%);
+  filter:drop-shadow(0 18px 24px rgba(0,0,0,.6)) saturate(.92) brightness(.9);
+  transition:filter .35s ease,transform .35s cubic-bezier(.2,.8,.2,1),opacity .25s;
+  animation:bob 5.5s ease-in-out infinite;animation-delay:var(--d,0s);
+  user-select:none;-webkit-user-drag:none;pointer-events:none;will-change:transform;
+}
+.unit .fig img.alt{opacity:0}
+@keyframes bob{0%,100%{translate:0 0}50%{translate:0 -5px}}
+.unit .pad{
+  position:absolute;bottom:0;left:50%;transform:translateX(-50%);
+  width:78%;max-width:190px;aspect-ratio:1/.24;border-radius:50%;
+  background:radial-gradient(closest-side,var(--c-soft,var(--cy-soft)),transparent);
+  border:1px solid color-mix(in srgb,var(--c,var(--cy)) 45%,transparent);
+  transition:box-shadow .35s,border-color .35s;
+}
+.unit .beam{
+  position:absolute;bottom:14px;left:50%;transform:translateX(-50%);
+  width:62%;height:0;pointer-events:none;
+  background:linear-gradient(to top,color-mix(in srgb,var(--c,var(--cy)) 22%,transparent),transparent);
+  transition:height .5s cubic-bezier(.2,.8,.2,1);
+  -webkit-mask-image:linear-gradient(90deg,transparent,#000 30%,#000 70%,transparent);
+          mask-image:linear-gradient(90deg,transparent,#000 30%,#000 70%,transparent);
+}
+.unit:hover .fig img,.unit:focus-visible .fig img,.unit.is-on .fig img,.unit.is-busy .fig img{
+  filter:drop-shadow(0 18px 24px rgba(0,0,0,.6)) drop-shadow(0 0 18px color-mix(in srgb,var(--c,var(--cy)) 35%,transparent)) saturate(1.05) brightness(1.04);
+  transform:translateX(-50%) scale(1.035);
+}
+.unit:hover .beam,.unit.is-on .beam,.unit.is-busy .beam{height:70%}
+.unit:hover .pad,.unit.is-on .pad,.unit.is-busy .pad{box-shadow:0 0 26px var(--c,var(--cy));border-color:var(--c,var(--cy))}
+.unit.has-alt:hover .fig img.main,.unit.has-alt.is-on .fig img.main{opacity:0}
+.unit.has-alt:hover .fig img.alt,.unit.has-alt.is-on .fig img.alt{opacity:1}
+.unit:focus-visible .pad{outline:2px solid var(--c,var(--cy));outline-offset:6px}
+.unit .meta{margin-top:14px;text-align:center;display:grid;gap:2px}
+.unit .meta .no{font-family:var(--mono);font-size:10px;letter-spacing:.2em;color:var(--c,var(--cy))}
+.unit .meta .role{font-size:13px;font-weight:700;letter-spacing:.06em}
+.unit .chip{
+  position:absolute;top:4%;left:50%;transform:translate(-50%,6px);z-index:3;
+  font-family:var(--mono);font-size:10px;letter-spacing:.1em;white-space:nowrap;
+  padding:4px 9px;border:1px solid var(--c,var(--cy));color:var(--c,var(--cy));
+  background:rgba(5,7,11,.85);opacity:0;transition:opacity .25s,transform .25s;pointer-events:none;
+}
+.unit.is-busy .chip{opacity:1;transform:translate(-50%,0)}
+.unit.is-busy .chip::after{content:"";display:inline-block;width:6px;height:10px;margin-left:6px;background:currentColor;vertical-align:-1px;animation:blink 1s steps(1) infinite}
+
+/* 故障演出（NORA） */
+.unit.glitchy:hover .fig img.alt,.unit.glitchy.is-on .fig img.alt{animation:bob 5.5s ease-in-out infinite,glitch 2.2s steps(1) infinite}
+@keyframes glitch{
+  0%,86%,100%{clip-path:none;translate:0 0}
+  88%{clip-path:inset(12% 0 58% 0);translate:-6px 0}
+  90%{clip-path:inset(46% 0 22% 0);translate:5px 0}
+  92%{clip-path:inset(70% 0 4% 0);translate:-3px 0}
+  94%{clip-path:none;translate:2px 0}
+}
+/* 未配属（シルエット） */
+.unit.classified .fig img{filter:brightness(0) drop-shadow(0 0 1px rgba(255,181,71,.9)) drop-shadow(0 0 12px rgba(255,181,71,.25))}
+.unit.classified:hover .fig img,.unit.classified.is-on .fig img{filter:drop-shadow(0 18px 24px rgba(0,0,0,.6)) brightness(1)}
+
+/* ---------- ホロパネル（キャラ情報） ---------- */
+.holo{
+  position:fixed;z-index:60;left:0;top:0;width:min(320px,calc(100vw - 32px));
+  padding:18px 20px 18px;
+  background:linear-gradient(160deg,rgba(14,24,38,.9),rgba(6,10,16,.92));
+  border:1px solid color-mix(in srgb,var(--c,var(--cy)) 55%,transparent);
+  box-shadow:0 20px 60px rgba(0,0,0,.55),0 0 0 1px rgba(0,0,0,.4),0 0 40px color-mix(in srgb,var(--c,var(--cy)) 14%,transparent);
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  opacity:0;visibility:hidden;transform:translateY(8px) scale(.98);transform-origin:left bottom;
+  transition:opacity .22s ease,transform .22s ease,visibility .22s;
+  pointer-events:none;
+}
+.holo.show{opacity:1;visibility:visible;transform:none}
+.holo::before,.holo::after{
+  content:"";position:absolute;width:14px;height:14px;border-color:var(--c,var(--cy));border-style:solid;
+}
+.holo::before{top:-1px;left:-1px;border-width:2px 0 0 2px}
+.holo::after{bottom:-1px;right:-1px;border-width:0 2px 2px 0}
+.holo .h-code{font-family:var(--mono);font-size:10px;letter-spacing:.2em;color:var(--c,var(--cy));display:flex;justify-content:space-between;gap:8px}
+.holo .h-code span:last-child{color:var(--faint)}
+.holo .h-name{font-weight:900;font-size:24px;line-height:1.3;margin-top:8px;letter-spacing:.03em}
+.holo .h-role{font-size:12px;color:var(--dim);margin-top:2px;padding-bottom:12px;border-bottom:1px dashed rgba(255,255,255,.12)}
+.holo .h-quote{margin-top:12px;font-size:16px;font-weight:700;line-height:1.6;min-height:3.2em;position:relative;padding-left:14px}
+.holo .h-quote::before{content:"";position:absolute;left:0;top:.35em;bottom:.35em;width:2px;background:var(--c,var(--cy))}
+.holo .h-quote .caret{display:inline-block;width:7px;height:1em;vertical-align:-2px;margin-left:2px;background:var(--c,var(--cy));animation:blink 1s steps(1) infinite}
+.holo .h-close{display:none}
+@media (hover:none),(max-width:720px){
+  .holo{
+    left:12px !important;right:12px;top:auto !important;bottom:calc(12px + env(safe-area-inset-bottom));
+    width:auto;transform:translateY(24px);pointer-events:auto;
+  }
+  .holo.show{transform:none}
+  .holo .h-close{
+    display:block;position:absolute;top:10px;right:10px;width:32px;height:32px;
+    font-family:var(--mono);font-size:16px;color:var(--dim);
+  }
+  .holo .h-code{padding-right:34px}
+}
+
+/* ---------- AGENT OPS ---------- */
+#ops .stage-scroll{position:relative}
+.stage{
+  position:relative;display:grid;grid-template-columns:repeat(5,1fr);column-gap:clamp(8px,1.6vw,24px);
+}
+.cells{display:contents}
+.cell-label{
+  grid-row:1;font-family:var(--mono);font-size:10px;letter-spacing:.2em;color:var(--dim);
+  display:flex;align-items:center;gap:10px;padding:0 6px 18px;
+}
+.cell-label::before,.cell-label::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,transparent,var(--line),transparent)}
+.cell-label::before{background:linear-gradient(90deg,transparent,rgba(120,190,255,.3))}
+.cell-label::after{background:linear-gradient(90deg,rgba(120,190,255,.3),transparent)}
+.cell-label.a{grid-column:1/3}.cell-label.b{grid-column:3/5}.cell-label.c{grid-column:5/6}
+.stage .unit{grid-row:2}
+.wire{
+  position:absolute;left:0;right:0;height:1px;pointer-events:none;
+  background:linear-gradient(90deg,transparent,rgba(91,231,255,.45) 8%,rgba(91,231,255,.45) 92%,transparent);
+}
+.wire::after{
+  content:"";position:absolute;inset:-1px 0;
+  background:repeating-linear-gradient(90deg,var(--cy) 0 6px,transparent 6px 22px);
+  opacity:.5;animation:flow 1.6s linear infinite;
+  -webkit-mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);
+          mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);
+}
+@keyframes flow{to{background-position:22px 0}}
+.packet{
+  position:absolute;width:12px;height:12px;border-radius:50%;margin:-6px 0 0 -6px;
+  background:#fff;box-shadow:0 0 0 3px rgba(91,231,255,.35),0 0 22px 4px var(--cy);
+  opacity:0;transition:left .7s cubic-bezier(.6,0,.3,1),opacity .3s;pointer-events:none;z-index:2;
+}
+.packet.on{opacity:1}
+
+/* ミッションコンソール */
+.console{
+  margin-top:clamp(40px,5vw,64px);display:grid;grid-template-columns:320px 1fr;
+  border:1px solid var(--line);background:var(--panel);
+}
+.console .side{padding:22px;border-right:1px solid var(--line);display:flex;flex-direction:column;gap:14px}
+.console .side h3{font-family:var(--mono);font-size:11px;letter-spacing:.2em;color:var(--dim);font-weight:500}
+.missions{display:grid;gap:8px}
+.mission{
+  text-align:left;padding:12px 14px;border:1px solid var(--line);font-size:14px;font-weight:500;
+  display:flex;gap:10px;align-items:baseline;transition:border-color .2s,background .2s;
+}
+.mission .n{font-family:var(--mono);font-size:10px;color:var(--faint)}
+.mission:hover{border-color:rgba(91,231,255,.4)}
+.mission[aria-pressed="true"]{border-color:var(--cy);background:var(--cy-soft)}
+.mission[aria-pressed="true"] .n{color:var(--cy)}
+.run{
+  margin-top:auto;padding:14px 16px;font-family:var(--mono);font-size:12px;letter-spacing:.2em;font-weight:700;
+  background:var(--cy);color:#001217;display:flex;justify-content:space-between;align-items:center;
+  transition:filter .2s,opacity .2s;
+}
+.run:hover{filter:brightness(1.1)}
+.run:disabled{opacity:.45;cursor:wait}
+.log{
+  font-family:var(--mono);font-size:12.5px;line-height:1.85;padding:20px 22px;min-height:280px;max-height:340px;overflow:auto;
+  color:var(--dim);
+}
+.log .ln{display:grid;grid-template-columns:auto auto 1fr;gap:10px;animation:lnIn .3s ease}
+.log .t{color:var(--faint)}
+.log .who{color:var(--c,var(--cy));white-space:nowrap}
+.log .msg{color:var(--ink);font-family:var(--jp);font-size:13.5px}
+.log .sys .msg{color:var(--dim);font-family:var(--mono);font-size:12px}
+.log .ok .msg{color:var(--grn);font-family:var(--mono)}
+.log .idle{color:var(--faint)}
+@keyframes lnIn{from{opacity:0;transform:translateY(4px)}}
+@media (max-width:860px){
+  #ops .stage-scroll{overflow-x:auto;scroll-snap-type:x mandatory;margin:0 calc(-1 * var(--gut));padding:0 var(--gut);scrollbar-width:none}
+  #ops .stage-scroll::-webkit-scrollbar{display:none}
+  .stage{grid-template-columns:repeat(5,min(46vw,220px));width:max-content}
+  .stage .unit{scroll-snap-align:center}
+  .unit .fig{height:clamp(230px,62vw,300px)}
+  .console{grid-template-columns:1fr}
+  .console .side{border-right:0;border-bottom:1px solid var(--line)}
+  .log{min-height:240px;font-size:12px}
+  .log .ln{grid-template-columns:auto 1fr}
+  .log .t{display:none}
+}
+.swipe{display:none}
+@media (max-width:860px){.swipe{display:block;margin-top:10px;text-align:right}}
+
+/* ---------- SCENARIO UNIT（NORA部隊） ---------- */
+#squad{
+  --c:var(--vi);--c-soft:var(--vi-soft);
+  background:radial-gradient(1000px 420px at 50% 20%,rgba(165,148,255,.07),transparent 70%);
+  border-top:1px solid rgba(165,148,255,.14);
+  overflow:hidden;
+}
+#squad .tag{color:var(--vi)}
+.squad-bar{
+  display:flex;flex-wrap:wrap;margin-bottom:clamp(28px,4vw,44px);
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;color:var(--dim);
+  border:1px solid rgba(165,148,255,.28);background:rgba(12,10,26,.5);width:max-content;max-width:100%;
+}
+.squad-bar span{padding:9px 14px;border-right:1px solid rgba(165,148,255,.2);display:inline-flex;align-items:center;gap:8px}
+.squad-bar span:last-child{border-right:0}
+.squad-bar b{color:var(--ink);font-weight:500}
+.squad-bar .dot{background:var(--vi);box-shadow:0 0 10px var(--vi)}
+.squad{position:relative;display:grid;grid-template-columns:repeat(6,1fr);column-gap:clamp(4px,1vw,16px)}
+.squad .unit{--c:var(--vi);--c-soft:var(--vi-soft)}
+.squad .unit .fig{height:clamp(200px,21vw,300px)}
+.squad .unit .meta{width:100%;max-width:150px}
+.squad .unit .meta .no{color:var(--vi)}
+.prog{display:block;height:3px;margin-top:10px;background:rgba(165,148,255,.15);position:relative;overflow:hidden}
+.prog i{position:absolute;inset:0 auto 0 0;width:0;background:var(--vi);box-shadow:0 0 8px var(--vi);transition:width .6s ease}
+.prog.full i{background:var(--grn);box-shadow:0 0 8px var(--grn)}
+.pct{font-family:var(--mono);font-size:10px;letter-spacing:.08em;color:var(--faint);margin-top:4px;display:block;white-space:nowrap}
+.pct.full{color:var(--grn)}
+.sq-line{
+  position:absolute;height:1px;pointer-events:none;
+  background:linear-gradient(90deg,transparent,rgba(165,148,255,.5) 6%,rgba(165,148,255,.5) 94%,transparent);
+}
+.sq-line .doc{
+  position:absolute;top:0;left:0;width:0;height:0;pointer-events:none;
+  transition:transform .9s cubic-bezier(.6,0,.3,1);will-change:transform;
+}
+.sq-line .doc::before{
+  content:"";position:absolute;top:-7px;left:-6px;width:12px;height:13px;
+  border:1px solid var(--vi);box-shadow:0 0 14px rgba(165,148,255,.7);
+  background:linear-gradient(var(--vi),var(--vi)) 2px 3px/7px 1px no-repeat,linear-gradient(var(--vi),var(--vi)) 2px 6px/7px 1px no-repeat,linear-gradient(rgba(165,148,255,.6),rgba(165,148,255,.6)) 2px 9px/5px 1px no-repeat,rgba(20,16,40,.95);
+}
+.pct.wait{color:var(--faint);opacity:.7}
+@media (max-width:860px){
+  .squad{grid-template-columns:repeat(3,1fr);row-gap:32px}
+  .squad .unit .fig{height:clamp(170px,46vw,240px)}
+  .sq-line{display:none}
+  .pct{font-size:9px;letter-spacing:0;overflow:hidden;text-overflow:ellipsis}
+  .squad-bar span{padding:7px 10px}
+}
+
+/* ---------- BREAK ROOM（息抜きメンバー） ---------- */
+#break{
+  --c:var(--am);--c-soft:var(--am-soft);
+  background:
+    radial-gradient(900px 400px at 50% 0%,rgba(255,181,71,.07),transparent 70%),
+    linear-gradient(transparent,rgba(255,181,71,.02) 40%,transparent);
+  border-top:1px solid rgba(255,181,71,.12);border-bottom:1px solid rgba(255,181,71,.12);
+  overflow:hidden;
+}
+#break .tag{color:var(--am)}
+.slate .open{color:var(--grn)} .slate .open::before{content:"● ";animation:blink 2.4s infinite}
+.slate{
+  display:flex;flex-wrap:wrap;gap:0;margin-bottom:28px;font-family:var(--mono);font-size:10px;letter-spacing:.18em;
+  border:1px solid rgba(255,181,71,.3);width:max-content;max-width:100%;
+}
+.slate span{padding:8px 14px;border-right:1px solid rgba(255,181,71,.3);color:var(--dim)}
+.slate span:last-child{border-right:0}
+.slate b{color:var(--am);font-weight:500;margin-left:8px}
+.slate .rec{color:var(--red)} .slate .rec::before{content:"● ";animation:blink 1.2s infinite}
+.cast{display:grid;grid-template-columns:repeat(5,1fr);gap:clamp(8px,1.6vw,24px);position:relative}
+.cast .unit{--c:var(--am);--c-soft:var(--am-soft)}
+.cast .unit .fig::before{
+  content:"";position:absolute;top:-40px;left:50%;width:140%;height:calc(100% + 40px);transform:translateX(-50%);
+  background:conic-gradient(from 180deg at 50% 0%,transparent 160deg,rgba(255,200,120,.10) 172deg,rgba(255,200,120,.14) 180deg,rgba(255,200,120,.10) 188deg,transparent 200deg);
+  opacity:.5;transition:opacity .4s;pointer-events:none;
+}
+.cast .unit:hover .fig::before,.cast .unit.is-on .fig::before{opacity:1}
+.cast .unit .meta .no{color:var(--am)}
+.cast .unit[data-id="sennin"] .fig img{height:80%}
+@media (max-width:860px){
+  .cast{grid-template-columns:repeat(2,1fr);row-gap:36px}
+  .cast .unit:last-child{grid-column:1/-1}
+  .cast .unit .fig{height:clamp(200px,52vw,280px)}
+}
+
+/* ---------- LAB LOOP ---------- */
+.lab{display:grid;grid-template-columns:minmax(0,440px) 1fr;gap:clamp(28px,5vw,72px);align-items:center}
+.loop{position:relative;width:100%;aspect-ratio:1}
+.loop svg{width:100%;height:100%;overflow:visible}
+.loop .track{fill:none;stroke:var(--line);stroke-width:1}
+.loop .track2{fill:none;stroke:rgba(91,231,255,.25);stroke-width:1;stroke-dasharray:2 8}
+.loop .node circle{fill:var(--bg2);stroke:rgba(120,190,255,.3);stroke-width:1;transition:all .4s}
+.loop .node text{font-family:var(--jp);font-size:15px;font-weight:700;fill:var(--dim);text-anchor:middle;transition:fill .4s}
+.loop .node .num{font-family:var(--mono);font-size:9px;font-weight:400;letter-spacing:.15em;fill:var(--faint)}
+.loop .node.on circle{fill:#0b2630;stroke:var(--cy);filter:drop-shadow(0 0 10px var(--cy))}
+.loop .node.on text{fill:var(--ink)}
+.loop .node.on .num{fill:var(--cy)}
+.loop .node.err.on circle{fill:#2a0d14;stroke:var(--red);filter:drop-shadow(0 0 12px var(--red))}
+.loop .node.err.on .num{fill:var(--red)}
+.loop .orb-g{transition:transform 1.2s cubic-bezier(.6,0,.3,1)}
+.loop .orb{fill:#fff;filter:drop-shadow(0 0 6px var(--cy)) drop-shadow(0 0 14px var(--cy))}
+.loop .center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;pointer-events:none}
+.loop .center .k{font-family:var(--mono);font-size:10px;letter-spacing:.24em;color:var(--faint)}
+.loop .center .v{font-family:var(--disp);font-size:clamp(36px,5vw,52px);font-weight:500;line-height:1.1;margin:6px 0}
+.loop .center .s{font-size:12px;color:var(--dim)}
+.term{border:1px solid var(--line);background:rgba(3,5,9,.85);position:relative;overflow:hidden}
+.term.err{animation:shake .4s}
+.term.err::after{content:"";position:absolute;inset:0;background:rgba(255,77,94,.08);pointer-events:none;animation:fade 1s forwards}
+@keyframes shake{20%{transform:translateX(-4px)}40%{transform:translateX(4px)}60%{transform:translateX(-2px)}80%{transform:translateX(2px)}}
+@keyframes fade{to{opacity:0}}
+.term .bar{display:flex;align-items:center;gap:7px;padding:10px 14px;border-bottom:1px solid var(--line);font-family:var(--mono);font-size:10px;letter-spacing:.14em;color:var(--faint)}
+.term .bar i{width:9px;height:9px;border-radius:50%;background:#2a3140}
+.term .bar i:first-child{background:#ff5f57}.term .bar i:nth-child(2){background:#febc2e}.term .bar i:nth-child(3){background:#28c840}
+.term .bar span{margin-left:auto}
+.term .body{font-family:var(--mono);font-size:12.5px;line-height:1.9;padding:16px 18px;height:300px;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end}
+.term .row{animation:lnIn .3s ease;white-space:pre-wrap;word-break:break-word}
+.term .row .p{color:var(--faint)}
+.term .row.you{color:var(--ink);font-family:var(--jp)}
+.term .row.ai{color:var(--cy);font-family:var(--jp)}
+.term .row.cmd{color:var(--dim)}
+.term .row.bad{color:var(--red)}
+.term .row.good{color:var(--grn)}
+.term .row.step{color:var(--am);font-size:10px;letter-spacing:.2em;margin-top:6px}
+.counters{display:grid;grid-template-columns:repeat(3,1fr);margin-top:16px;border:1px solid var(--line)}
+.counters div{padding:12px 14px;border-right:1px solid var(--line)}
+.counters div:last-child{border-right:0}
+.counters .k{font-family:var(--mono);font-size:9.5px;letter-spacing:.16em;color:var(--faint);display:block}
+.counters .v{font-family:var(--disp);font-size:22px;font-weight:500}
+.counters .v.red{color:var(--red)}.counters .v.grn{color:var(--grn)}
+@media (max-width:860px){
+  .lab{grid-template-columns:1fr}
+  .loop{max-width:400px;margin:0 auto;width:100%}
+  .term .body{height:260px;font-size:12px}
+}
+
+/* 実験ログ */
+.exp-head{margin-top:clamp(64px,9vw,110px);display:flex;justify-content:space-between;align-items:end;gap:16px;margin-bottom:20px;flex-wrap:wrap}
+.exp-head h3{font-size:clamp(20px,2.6vw,26px);font-weight:900}
+.exps{display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--line)}
+.exp{padding:22px 20px 26px 0;border-right:1px solid var(--line);display:flex;flex-direction:column;gap:10px;position:relative}
+.exp + .exp{padding-left:20px}
+.exp:last-child{border-right:0}
+.exp .st{font-family:var(--mono);font-size:10px;letter-spacing:.16em;display:inline-flex;align-items:center;gap:7px;color:var(--dim)}
+.exp .st::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor;box-shadow:0 0 8px currentColor}
+.exp .st.live{color:var(--grn)} .exp .st.proto{color:var(--cy)} .exp .st.fix{color:var(--am)} .exp .st.test{color:#c69bff}
+.exp h4{font-size:16px;font-weight:700;line-height:1.5}
+.exp p{font-size:13px;color:var(--dim)}
+.exp .idx{position:absolute;top:18px;right:18px;font-family:var(--mono);font-size:10px;color:var(--faint)}
+.exp:last-child .idx{right:0}
+@media (max-width:960px){
+  .exps{grid-template-columns:1fr 1fr}
+  .exp:nth-child(2){border-right:0}
+  .exp:nth-child(3){padding-left:0}
+  .exp:nth-child(n+3){border-top:1px solid var(--line)}
+  .exp:nth-child(2) .idx{right:0}
+}
+@media (max-width:560px){
+  .exps{grid-template-columns:1fr}
+  .exp,.exp + .exp{padding:20px 0 22px;border-right:0}
+  .exp + .exp{border-top:1px solid var(--line)}
+  .exp .idx{right:0}
+}
+
+/* ---------- フッター ---------- */
+footer{padding:clamp(80px,12vw,150px) var(--gut) 48px;text-align:center;border-top:1px solid var(--line)}
+footer .back{
+  display:inline-flex;flex-direction:column;align-items:center;gap:14px;text-decoration:none;
+}
+footer .back .en{font-family:var(--mono);font-size:11px;letter-spacing:.3em;color:var(--dim)}
+footer .back .jp{font-size:clamp(28px,5vw,48px);font-weight:900;letter-spacing:.04em;transition:color .25s,text-shadow .25s}
+footer .back:hover .jp{color:var(--cy);text-shadow:0 0 30px rgba(91,231,255,.45)}
+footer .note{margin-top:28px;color:var(--faint);font-size:12px}
+footer .sig{margin-top:40px;font-family:var(--mono);font-size:10px;letter-spacing:.2em;color:var(--faint)}
+
+/* ---------- スクロール出現 ---------- */
+.rv{opacity:0;transform:translateY(24px);transition:opacity .9s ease,transform .9s cubic-bezier(.2,.8,.2,1)}
+.rv.in{opacity:1;transform:none}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none !important;transition-duration:.01ms !important}
+  .rv{opacity:1;transform:none}
+  html{scroll-behavior:auto}
+}
+</style>
+</head>
+<body>
+<div class="bg-grid" aria-hidden="true"></div>
+<div class="bg-scan" aria-hidden="true"></div>
+
+<!-- 起動演出（1回だけ） -->
+<div class="boot" id="boot" aria-hidden="true">
+  <pre id="bootText"></pre>
+  <div class="skip">TAP TO SKIP</div>
+</div>
+
+<header class="topbar">
+  <a href="../index.html">← 表面へ戻る</a>
+  <div class="mid">BACKSIDE <b>//</b> AI COMMAND ROOM</div>
+  <div class="right"><span class="dot"></span><span id="clock">--:--:--</span></div>
+</header>
+
+<main>
+  <!-- ========== HERO ========== -->
+  <div class="hero" id="top" style="padding-left:var(--gut);padding-right:var(--gut)">
+    <div>
+      <p class="eyebrow"><b>ACCESS GRANTED</b> ─ 裏口から入りました</p>
+      <h1><span>表は、完成品。</span><span class="l2">裏は、<em>実験室</em>。</span></h1>
+      <p class="lead">ここは、AIエージェントたちと相談して、作って、動かして、壊して、直している場所です。きれいに並べた作品の、ひとつ手前の景色をどうぞ。</p>
+      <div class="stats">
+        <div class="stat"><span class="k">AGENTS</span><span class="v cy">5<small>名 稼働中</small></span></div>
+        <div class="stat"><span class="k">SCENARIO UNIT</span><span class="v" style="color:var(--vi)">6<small>体 直列稼働</small></span></div>
+        <div class="stat"><span class="k">今日の「違う違う」</span><span class="v" id="nope">12<small>回</small></span></div>
+        <div class="stat"><span class="k">BUILD</span><span class="v" id="build">#0000</span></div>
+      </div>
+    </div>
+    <div class="hero-cmd">
+      <div class="ring" aria-hidden="true"></div>
+      <div class="label" aria-hidden="true"><b>COMMANDER</b>中の人<br>発案・最終判断</div>
+      <div data-slot="commander" style="width:100%"></div>
+    </div>
+    <div class="scroll-cue" aria-hidden="true">SCROLL<i></i></div>
+  </div>
+
+  <!-- ========== AGENT OPS ========== -->
+  <section id="ops">
+    <div class="wrap">
+      <div class="sec-head rv">
+        <span class="tag">01 / AGENT OPS</span>
+        <h2>AIエージェント司令室</h2>
+        <p>依頼が入ると、5人が順番に動きます。調べる人、疑う人、値段を見る人、止める人、整える人。<br>キャラクターに触れると、人となりが少しだけ見えます。</p>
+      </div>
+
+      <div class="stage-scroll rv" id="stageScroll">
+        <div class="stage" id="stage">
+          <div class="cell-label a">RESEARCH CELL</div>
+          <div class="cell-label b">REVIEW ─ 並行チェック</div>
+          <div class="cell-label c">FINISH</div>
+          <div class="wire" id="wire" aria-hidden="true"></div>
+          <div class="packet" id="packet" aria-hidden="true"></div>
+        </div>
+      </div>
+      <p class="hint swipe">← スワイプで全員 →</p>
+
+      <div class="console rv">
+        <div class="side">
+          <h3>MISSION SELECT</h3>
+          <div class="missions" id="missions"></div>
+          <button class="run" id="run" type="button"><span>RUN MISSION</span><span>▶</span></button>
+        </div>
+        <div class="log" id="log" aria-live="polite">
+          <div class="idle">// ミッションを選んで RUN を押すと、チームが動きます。</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== SCENARIO UNIT（NORA部隊） ========== -->
+  <section id="squad">
+    <div class="wrap">
+      <div class="sec-head rv">
+        <span class="tag">02 / SCENARIO UNIT</span>
+        <h2>シナリオ部隊</h2>
+        <p>シナリオ制作の主力部隊。6体のNORAが工程ごとに持ち場を分け、1本の台本をバトンのように順番に受け渡していきます。<br>前の工程が終わると、次のNORAが動き出します。</p>
+      </div>
+      <div class="squad-bar rv" aria-hidden="true">
+        <span><i class="dot"></i>UNITS<b>6/6 ONLINE</b></span>
+        <span>JOB<b>ep07_台本.md</b></span>
+        <span>DRAFT<b id="sqDraft">v12</b></span>
+        <span>STAGE<b id="sqStage">01 / 06</b></span>
+        <span>UPTIME<b id="sqTime">00:00:00</b></span>
+      </div>
+      <div class="squad rv" id="squadGrid">
+        <div class="sq-line" id="sqLine" aria-hidden="true"><span class="doc" id="sqDoc"></span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== BREAK ROOM（息抜きメンバー） ========== -->
+  <section id="break">
+    <div class="wrap">
+      <div class="sec-head rv">
+        <span class="tag">03 / BREAK ROOM</span>
+        <h2>息抜きメンバー</h2>
+        <p>ここは仕事の部隊ではありません。行き詰まったときの雑談相手、発想を切り替える相手です。<br>だいたい役には立たない。でも、なぜか次の一手はここで出る。</p>
+      </div>
+      <div class="slate rv" aria-hidden="true">
+        <span>OFF DUTY</span>
+        <span>COFFEE<b id="coffee">3</b> 杯目</span>
+        <span>TOPIC<b id="topic">雑談</b></span>
+        <span class="open">OPEN</span>
+      </div>
+      <div class="cast rv" id="cast"></div>
+    </div>
+  </section>
+
+  <!-- ========== LAB LOOP ========== -->
+  <section id="lab">
+    <div class="wrap">
+      <div class="sec-head rv">
+        <span class="tag">04 / LAB LOOP</span>
+        <h2>作って、壊して、直す。</h2>
+        <p>完成品の裏では、だいたいこのループが回っています。<br>うまくいかない回のほうが多い。でも、そのぶん次が速くなる。</p>
+      </div>
+      <div class="lab rv">
+        <div class="loop" id="loop">
+          <svg viewBox="-200 -200 400 400" aria-hidden="true">
+            <circle class="track" r="150"/>
+            <circle class="track2" r="118"/>
+            <g class="orb-g" id="orbG"><circle class="orb" r="5" cx="0" cy="-150"/></g>
+            <g id="nodes"></g>
+          </svg>
+          <div class="center">
+            <span class="k">LOOP</span>
+            <span class="v" id="loopNo">#0001</span>
+            <span class="s" id="loopState">相談中</span>
+          </div>
+        </div>
+        <div>
+          <div class="term" id="term">
+            <div class="bar"><i></i><i></i><i></i><span>~/lab — zsh</span></div>
+            <div class="body" id="termBody"></div>
+          </div>
+          <div class="counters">
+            <div><span class="k">今日の失敗</span><span class="v red" id="cFail">0</span></div>
+            <div><span class="k">今日の修正</span><span class="v grn" id="cFix">0</span></div>
+            <div><span class="k">思いつき在庫</span><span class="v">∞</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="exp-head rv">
+        <h3>EXPERIMENT LOG ─ いま机の上にあるもの</h3>
+        <span class="hint">※ 表面に載せる前の段階も含みます</span>
+      </div>
+      <div class="exps rv">
+        <article class="exp">
+          <span class="idx">EXP-01</span>
+          <span class="st live">RUNNING</span>
+          <h4>AIエージェント部隊</h4>
+          <p>サブエージェントに人格と役割を持たせ、調査 → 裏取り → 値付け → 法務 → 仕上げを分担させる実験。</p>
+        </article>
+        <article class="exp">
+          <span class="idx">EXP-02</span>
+          <span class="st proto">PROTOTYPE</span>
+          <h4>AI導入シミュレーター</h4>
+          <p>架空の製造業を訪問し、4人の担当者へのヒアリングから会社の実態を探る体験デモ。</p>
+        </article>
+        <article class="exp">
+          <span class="idx">EXP-03</span>
+          <span class="st fix">v3 ─ REBUILT</span>
+          <h4>ナレーション制作ワークフロー</h4>
+          <p>ナレーション制作の手順をワークフロー化。壊して、直して、いま3代目。</p>
+        </article>
+        <article class="exp">
+          <span class="idx">EXP-04</span>
+          <span class="st test">TESTING</span>
+          <h4>コードで動画をつくる</h4>
+          <p>Remotionで、動画をコードから組み立てる実験。レンダリング待ちの間に次を考える。</p>
+        </article>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <a class="back" href="../index.html">
+    <span class="en">EXIT TO FRONT SIDE</span>
+    <span class="jp">表へ戻る ↩</span>
+  </a>
+  <p class="note">裏口は、閉めておいてください。</p>
+  <p class="sig">BACKSIDE // BUILT WITH AI, BROKEN BY HUMAN, FIXED TOGETHER.</p>
+</footer>
+
+<!-- キャラクター情報パネル（hover / tap で表示） -->
+<div class="holo" id="holo" role="status" aria-live="polite">
+  <button class="h-close" id="holoClose" type="button" aria-label="閉じる">×</button>
+  <div class="h-code"><span id="hCode"></span><span id="hTeam"></span></div>
+  <div class="h-name" id="hName"></div>
+  <div class="h-role" id="hRole"></div>
+  <div class="h-quote" id="hQuote"></div>
+</div>
+
+<script>
+(() => {
+  "use strict";
+  const A = "assets/";
+
+  /* =======================================================
+     キャラクター定義
+     img: 通常画像 / alt: hover・tap時に切り替わる画像（任意）
+     quotes: 触れるたびに順番に表示される一言
+     ======================================================= */
+  const CHARS = {
+    commander: {
+      team: "COMMAND", code: "CMD-00 // COMMANDER", no: "CMD", role: "司令・発案・最終判断",
+      name: "中の人", img: "commander.webp", alt: "commander-hi.webp",
+      quotes: [
+        "違う違う、そうじゃなくて…（本日12回目）",
+        "AIは万能じゃない。だから、人間と組む。",
+        "とりあえず作ってみよう。壊れたら直せばいい。"
+      ]
+    },
+    kozo: {
+      tag: "情報収集",
+      team: "AGENT OPS", code: "AGENT 01 // RESEARCH", no: "01 RESEARCH", role: "情報収集・トレンド探索",
+      name: "コーゾーさん", img: "kozo.webp", busy: "探索中",
+      quotes: [
+        "ちょっとこれ見て。こんなん出てきたで",
+        "まだ裏取れてへんけど、これ今おもろい動きしてる",
+        "一応、裏取りは助手に回しとくわ"
+      ]
+    },
+    verifier: {
+      tag: "裏取り",
+      team: "AGENT OPS", code: "AGENT 02 // VERIFY", no: "02 VERIFY", role: "裏取り・ファクトチェック",
+      name: "コーゾーさんの助手", img: "verifier.webp", busy: "裏取り中",
+      quotes: [
+        "その情報、一次ソースありますか？",
+        "更新日は確認しました？",
+        "それは事実ではなく、推測です。"
+      ]
+    },
+    mutsuko: {
+      tag: "価格・企画相談",
+      team: "AGENT OPS", code: "AGENT 03 // PRICING", no: "03 PRICING", role: "価格・企画相談／収益化",
+      name: "ムツコ", img: "mutsuko.webp", busy: "採算チェック",
+      quotes: [
+        "それ、ちゃんとお金になるん？",
+        "タダで出したものに、あとから値段は付かないのよ。",
+        "安いのは優しさじゃなくて、自信のなさ。"
+      ]
+    },
+    hashimoto: {
+      tag: "法務チェック",
+      team: "AGENT OPS", code: "AGENT 04 // LEGAL", no: "04 LEGAL", role: "法務・権利・セキュリティ確認",
+      name: "ハシモトさん", img: "hashimoto.webp", busy: "リスク確認",
+      quotes: [
+        "その進め方は、おすすめできません。",
+        "確認すべき点は3つあります。",
+        "公開する前に、.env の中身をもう一度見ましょう。"
+      ]
+    },
+    joshu: {
+      tag: "校正・仕上げ",
+      team: "AGENT OPS", code: "AGENT 05 // FINISH", no: "05 FINISH", role: "校正・整理・最終仕上げ",
+      name: "助手", img: "joshu.webp", busy: "仕上げ中",
+      quotes: [
+        "はい、整えておきました。",
+        "ここだけ、意味が二通りに取れます。確認してください。",
+        "内容は変えず、読みやすさだけ調整しています。"
+      ]
+    },
+    n1: {
+      tag: "構成", prog: true,
+      team: "SCENARIO UNIT", code: "NORA-01 // STRUCTURE", no: "NORA-01", role: "構成・プロット設計",
+      name: "NORA-01", img: "nora.webp", alt: "nora-scan2.webp", busy: "構成中",
+      quotes: [
+        "起承転結、仮組みしました。“転”が弱いです。",
+        "この話、3幕で足ります。",
+        "見せ場を1分30秒地点に移動しました。"
+      ]
+    },
+    n2: {
+      tag: "情報整理", prog: true,
+      team: "SCENARIO UNIT", code: "NORA-02 // SORT", no: "NORA-02", role: "情報整理・資料の圧縮",
+      name: "NORA-02", img: "nora-b.webp", alt: "nora-scan2.webp", busy: "整理中",
+      quotes: [
+        "資料47件を、5件に圧縮しました。",
+        "重複を検出。統合します。",
+        "使わない情報も、捨てずに保管しています。"
+      ]
+    },
+    n3: {
+      tag: "台本化", prog: true,
+      team: "SCENARIO UNIT", code: "NORA-03 // SCRIPT", no: "NORA-03", role: "台本化・セリフ起こし",
+      name: "NORA-03", img: "nora-c.webp", alt: "nora-scan2.webp", busy: "台本化中",
+      quotes: [
+        "ト書きとセリフを分離しました。",
+        "尺は2分40秒。20秒オーバーです。",
+        "ここはセリフではなく、“間”で見せます。"
+      ]
+    },
+    n4: {
+      tag: "リライト", prog: true,
+      team: "SCENARIO UNIT", code: "NORA-04 // REWRITE", no: "NORA-04", role: "リライト・改稿",
+      name: "NORA-04", img: "nora.webp", alt: "nora-err.webp", glitch: true, busy: "改稿中",
+      quotes: [
+        "第7稿です。第6稿よりは、良いです。",
+        "同じ言い回しが3回出ています。",
+        "……第8稿に入ります。"
+      ]
+    },
+    n5: {
+      tag: "表現調整", prog: true,
+      team: "SCENARIO UNIT", code: "NORA-05 // TONE", no: "NORA-05", role: "表現・トーン調整",
+      name: "NORA-05", img: "nora-b.webp", alt: "nora-scan2.webp", busy: "調整中",
+      quotes: [
+        "「すごい」を別の言葉に替えました。4か所です。",
+        "ここは、もう少しやわらかく。",
+        "語尾の「です」が5連続です。散らします。"
+      ]
+    },
+    n6: {
+      tag: "最終チェック", prog: true,
+      team: "SCENARIO UNIT", code: "NORA-06 // QA", no: "NORA-06", role: "最終チェック・矛盾検出",
+      name: "NORA-06", img: "nora-c.webp", alt: "nora-scan2.webp", busy: "検証中",
+      quotes: [
+        "矛盾ゼロ件。……念のため、再確認します。",
+        "OKです。出荷してください。",
+        "設定と1か所ずれています。差し戻します。"
+      ]
+    },
+    sanon: {
+      tag: "観察・分析",
+      team: "BREAK ROOM", code: "OFF 01 // LOG AI-001", no: "OFF 01", role: "観察・分析AI（コンサル目線）",
+      name: "サノン", img: "sanon.webp", alt: "sanon-yay.webp",
+      quotes: [
+        "で、それ200万かけたんですか？",
+        "処理効率に、差が出ています。",
+        "本日も、興味深い人間行動を確認しました。"
+      ]
+    },
+    noraOff: {
+      tag: "非番・ツッコミ",
+      team: "BREAK ROOM", code: "OFF 02 // AI-N001", no: "OFF 02", role: "非番のNORA（雑談中も非効率が気になる）",
+      name: "NORA（非番）", img: "nora-c.webp", alt: "nora-err.webp", glitch: true,
+      quotes: [
+        "本日の稼働は終了しました。",
+        "休憩中にも非効率を検出しました。…いえ、休みます。",
+        "OVERLOAD DETECTED。……冗談です。"
+      ]
+    },
+    sennin: {
+      tag: "格言・オチ",
+      team: "BREAK ROOM", code: "OFF 03 // SAGE", no: "OFF 03", role: "格言・人生相談・オチ担当",
+      name: "仙人", img: "sennin.webp",
+      quotes: [
+        "焦るでない。答えはの、だいたい二杯目で出る。",
+        "完璧を待つ者は、何ひとつ出荷できんぞ。",
+        "バグもな、一晩寝かせると顔つきが変わる。"
+      ]
+    },
+    daikon: {
+      tag: "会社員あるある",
+      team: "BREAK ROOM", code: "OFF 04 // OFFICE WORKER", no: "OFF 04", role: "共感担当・会社員あるある",
+      name: "疲れた会社員（大根）", img: "daikon.webp", alt: "daikon-s.webp",
+      quotes: [
+        "え、それ…今日中ですか…？",
+        "定時って、都市伝説ですよね…",
+        "エクセルが…また固まりました…"
+      ]
+    },
+    recruit: {
+      team: "BREAK ROOM", code: "OFF ?? // CLASSIFIED", no: "OFF ??", role: "所属未定（ときどき休憩室にいる）",
+      name: "？？？", img: "recruit.webp", classified: true,
+      quotes: [
+        "……名前は、まだもらってない。",
+        "出番？ そのうち来るよ。たぶんね。"
+      ]
+    }
+  };
+
+  const OPS = ["kozo", "verifier", "mutsuko", "hashimoto", "joshu"];
+  const SQUAD = ["n1", "n2", "n3", "n4", "n5", "n6"];
+  const CAST = ["sanon", "noraOff", "sennin", "daikon", "recruit"];
+
+  const MISSIONS = [
+    {
+      title: "新しいツールを公開したい",
+      steps: [
+        ["kozo", "似たツール3つ見つけたで。けど、この切り口はまだ誰もやってへん。"],
+        ["verifier", "2件目の記事、更新日が去年です。比較対象から外します。"],
+        [["mutsuko", "無料で配るの？ 次の仕事に繋がる根拠がないなら、値段つけなさい。"],
+         ["hashimoto", "README に APIキーの記載があります。公開前に削除してください。"]],
+        ["joshu", "表記ゆれを4か所そろえました。このまま公開できます。"]
+      ],
+      done: "公開準備 OK"
+    },
+    {
+      title: "note記事のネタを探したい",
+      steps: [
+        ["kozo", "海外で「AIエージェントを社員として扱う」話がじわじわ来てるで。"],
+        ["verifier", "一次ソースを確認しました。数字は元記事と一致しています。"],
+        [["mutsuko", "で、それ読んだ人は何が得するの。そこを1行目に書きなさい。"],
+         ["hashimoto", "スクリーンショットは引用の範囲に収めてください。出典の明記も必要です。"]],
+        ["joshu", "結論を冒頭に移しました。内容は変えていません。"]
+      ],
+      done: "下書き完成"
+    },
+    {
+      title: "見積もりを出したい",
+      steps: [
+        ["kozo", "相場ざっと拾ってきたで。幅、めっちゃあるわ。"],
+        ["verifier", "その相場、3年前の記事が混ざっています。"],
+        [["mutsuko", "工数じゃなくて、相手が浮く時間で決めるのよ。下げたら、それが定価になるわよ。"],
+         ["hashimoto", "修正回数と、納品後の保守範囲を契約書に明記しましょう。"]],
+        ["joshu", "見積書の体裁を整えました。金額には触れていません。"]
+      ],
+      done: "見積書 送付可"
+    }
+  ];
+
+  const $ = (s, r = document) => r.querySelector(s);
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const touchMode = () => matchMedia("(hover: none), (max-width: 720px)").matches;
+  const sleep = ms => new Promise(r => setTimeout(r, reduce ? Math.min(ms, 60) : ms));
+
+  /* ---------- キャラクターを描画 ---------- */
+  function unitEl(id, i) {
+    const c = CHARS[id];
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "unit" + (c.alt ? " has-alt" : "") + (c.glitch ? " glitchy" : "") + (c.classified ? " classified" : "");
+    b.dataset.id = id;
+    b.style.setProperty("--d", (-i * 1.1) + "s");
+    b.setAttribute("aria-label", c.classified ? "未公開のキャラクター" : `${c.name}（${c.role}）`);
+    b.innerHTML =
+      `<span class="chip">${c.busy || ""}</span>` +
+      `<span class="fig"><span class="beam"></span><span class="pad"></span>` +
+      `<img class="main" src="${A + c.img}" alt="" loading="lazy" decoding="async">` +
+      (c.alt ? `<img class="alt" src="${A + c.alt}" alt="" loading="lazy" decoding="async">` : "") +
+      `</span>` +
+      (c.team === "COMMAND" ? "" :
+        `<span class="meta"><span class="no">${c.no}</span><span class="role">${c.classified ? "？？？" : c.tag}</span>` +
+        (c.prog ? `<span class="prog"><i></i></span><span class="pct">待機中</span>` : "") + `</span>`);
+    return b;
+  }
+  const stage = $("#stage");
+  OPS.forEach((id, i) => stage.appendChild(unitEl(id, i)));
+  SQUAD.forEach((id, i) => $("#squadGrid").appendChild(unitEl(id, i + 1)));
+  CAST.forEach((id, i) => $("#cast").appendChild(unitEl(id, i + 2)));
+  $('[data-slot="commander"]').appendChild(unitEl("commander", 0));
+
+  /* ---------- ホロパネル ---------- */
+  const holo = $("#holo");
+  const hq = $("#hQuote");
+  const qIndex = {};
+  let active = null, anchor = null, typeTimer = null;
+
+  function place() {
+    if (!anchor || touchMode()) return;
+    const r = anchor.querySelector(".fig").getBoundingClientRect();
+    const w = holo.offsetWidth, h = holo.offsetHeight;
+    let x = r.left + r.width * 0.62;
+    if (x + w > innerWidth - 16) x = r.left + r.width * 0.38 - w;
+    x = Math.max(16, Math.min(x, innerWidth - w - 16));
+    let y = r.top + r.height * 0.12 - h * 0.35;
+    y = Math.max(60, Math.min(y, innerHeight - h - 16));
+    holo.style.left = x + "px";
+    holo.style.top = y + "px";
+  }
+  function typeQuote(text) {
+    clearInterval(typeTimer);
+    if (reduce) { hq.textContent = text; return; }
+    let n = 0;
+    hq.innerHTML = '<span class="caret"></span>';
+    typeTimer = setInterval(() => {
+      n++;
+      hq.innerHTML = "";
+      hq.append(text.slice(0, n));
+      const cr = document.createElement("span"); cr.className = "caret"; hq.appendChild(cr);
+      if (n >= text.length) { clearInterval(typeTimer); setTimeout(() => cr.remove(), 1400); }
+    }, 38);
+  }
+  function open(el) {
+    const id = el.dataset.id, c = CHARS[id];
+    if (anchor) anchor.classList.remove("is-on");
+    anchor = el; active = id;
+    el.classList.add("is-on");
+    const color = getComputedStyle(el).getPropertyValue("--c").trim();
+    holo.style.setProperty("--c", color || "var(--cy)");
+    $("#hCode").textContent = c.code;
+    $("#hTeam").textContent = c.team;
+    $("#hName").textContent = c.name;
+    $("#hRole").textContent = c.role;
+    const i = qIndex[id] = ((qIndex[id] ?? -1) + 1) % c.quotes.length;
+    typeQuote("「" + c.quotes[i] + "」");
+    holo.classList.add("show");
+    place();
+  }
+  function close() {
+    if (anchor) anchor.classList.remove("is-on");
+    anchor = null; active = null;
+    holo.classList.remove("show");
+    clearInterval(typeTimer);
+  }
+  document.querySelectorAll(".unit").forEach(el => {
+    el.addEventListener("pointerenter", e => { if (e.pointerType === "mouse" && !touchMode()) open(el); });
+    el.addEventListener("pointerleave", e => { if (e.pointerType === "mouse" && !touchMode() && anchor === el) close(); });
+    el.addEventListener("focus", () => { if (!touchMode() && anchor !== el) open(el); });
+    el.addEventListener("blur", () => { if (!touchMode() && anchor === el) close(); });
+    el.addEventListener("click", e => {
+      e.stopPropagation();
+      if (anchor !== el) open(el);
+      else if (touchMode()) close();
+      else open(el); // PC でクリック → 次の一言
+    });
+  });
+  $("#holoClose").addEventListener("click", e => { e.stopPropagation(); close(); });
+  holo.addEventListener("click", e => e.stopPropagation());
+  document.addEventListener("click", () => { if (touchMode()) close(); });
+  document.addEventListener("keydown", e => { if (e.key === "Escape") close(); });
+  addEventListener("scroll", () => requestAnimationFrame(place), { passive: true });
+  addEventListener("resize", () => { place(); layoutWire(); });
+  $("#stageScroll").addEventListener("scroll", () => requestAnimationFrame(place), { passive: true });
+
+  /* ---------- 司令室：配線とパケット ---------- */
+  const wire = $("#wire"), packet = $("#packet");
+  const opsEls = OPS.map(id => stage.querySelector(`[data-id="${id}"]`));
+  function centerOf(el) {
+    const s = stage.getBoundingClientRect(), f = el.querySelector(".pad").getBoundingClientRect();
+    return { x: f.left + f.width / 2 - s.left, y: f.top + f.height / 2 - s.top };
+  }
+  function layoutWire() {
+    const a = centerOf(opsEls[0]), b = centerOf(opsEls[opsEls.length - 1]);
+    wire.style.top = a.y + "px";
+    wire.style.left = (a.x - 60) + "px";
+    wire.style.right = "auto";
+    wire.style.width = (b.x - a.x + 120) + "px";
+    packet.style.top = a.y + "px";
+  }
+  function movePacket(el) {
+    const p = centerOf(el);
+    packet.style.left = p.x + "px";
+    packet.classList.add("on");
+    const sc = $("#stageScroll");
+    if (sc.scrollWidth > sc.clientWidth) sc.scrollTo({ left: p.x - sc.clientWidth / 2, behavior: reduce ? "auto" : "smooth" });
+  }
+  requestAnimationFrame(layoutWire);
+  addEventListener("load", layoutWire);
+
+  /* ---------- ミッション ---------- */
+  const log = $("#log");
+  let mission = 0, running = false;
+  MISSIONS.forEach((m, i) => {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "mission";
+    b.setAttribute("aria-pressed", i === 0);
+    b.innerHTML = `<span class="n">M-0${i + 1}</span><span>${m.title}</span>`;
+    b.addEventListener("click", () => {
+      if (running) return;
+      mission = i;
+      document.querySelectorAll(".mission").forEach((x, j) => x.setAttribute("aria-pressed", j === i));
+    });
+    $("#missions").appendChild(b);
+  });
+  const stamp = () => new Date().toLocaleTimeString("ja-JP", { hour12: false });
+  function line(kind, who, msg, color) {
+    const d = document.createElement("div");
+    d.className = "ln " + kind;
+    if (color) d.style.setProperty("--c", color);
+    d.innerHTML = `<span class="t">${stamp()}</span><span class="who"></span><span class="msg"></span>`;
+    d.querySelector(".who").textContent = who;
+    d.querySelector(".msg").textContent = msg;
+    log.appendChild(d);
+    log.scrollTop = log.scrollHeight;
+  }
+  async function runMission() {
+    if (running) return;
+    running = true; close();
+    const btn = $("#run"); btn.disabled = true;
+    const m = MISSIONS[mission];
+    log.innerHTML = "";
+    line("sys", "SYS", `▶ MISSION M-0${mission + 1} 受信：「${m.title}」`);
+    await sleep(700);
+    for (const step of m.steps) {
+      const group = Array.isArray(step[0]) ? step : [step];
+      const els = group.map(([id]) => stage.querySelector(`[data-id="${id}"]`));
+      movePacket(els.length > 1 ? els[0] : els[0]);
+      if (els.length > 1) {
+        await sleep(350);
+        const a = centerOf(els[0]), b = centerOf(els[1]);
+        packet.style.left = (a.x + b.x) / 2 + "px";
+      }
+      els.forEach(e => e.classList.add("is-busy"));
+      await sleep(1100);
+      for (const [id, msg] of group) {
+        line("", CHARS[id].name, msg, getComputedStyle(stage.querySelector(`[data-id="${id}"]`)).getPropertyValue("--c") || "");
+        await sleep(650);
+      }
+      await sleep(500);
+      els.forEach(e => e.classList.remove("is-busy"));
+    }
+    packet.classList.remove("on");
+    line("ok", "SYS", `✓ MISSION COMPLETE ─ ${m.done}`);
+    btn.disabled = false; running = false;
+  }
+  $("#run").addEventListener("click", runMission);
+
+  /* ---------- ラボループ ---------- */
+  const STEPS = [
+    { jp: "相談する", en: "ASK", st: "相談中" },
+    { jp: "作る", en: "BUILD", st: "制作中" },
+    { jp: "動かす", en: "RUN", st: "実行中" },
+    { jp: "壊れる", en: "BREAK", st: "故障中…", err: true },
+    { jp: "直す", en: "FIX", st: "修理中" },
+    { jp: "また試す", en: "RETRY", st: "再挑戦中" }
+  ];
+  const SCRIPTS = [
+    [
+      [["you", "> これ、ボタン1個で自動化できる？"], ["ai", "  できます。まず手順を3つに分けましょう。"]],
+      [["cmd", "$ git commit -m \"とりあえず動く版\""]],
+      [["cmd", "$ npm start"], ["cmd", "  ▶ http://localhost:3000 で起動"]],
+      [["bad", "✕ TypeError: Cannot read properties of undefined"]],
+      [["ai", "  原因は、全角スペース1個でした。"], ["good", "✓ fix: 全角スペースを削除"]],
+      [["good", "✓ 動いた。"], ["you", "> じゃあ次、これもできる？"]]
+    ],
+    [
+      [["you", "> 違う違う、そうじゃなくて…"], ["ai", "  なるほど。“やりたいこと”から聞き直させてください。"]],
+      [["cmd", "$ touch idea_v7_final_本当に最終.md"]],
+      [["cmd", "$ python render.py"], ["cmd", "  processing… 38%"]],
+      [["bad", "✕ MemoryError: 動画が長すぎました"]],
+      [["ai", "  10秒ごとに分けて処理しましょう。"], ["good", "✓ fix: チャンク分割"]],
+      [["good", "✓ 通った。"], ["you", "> …もう1本だけ試してみる。"]]
+    ],
+    [
+      [["you", "> この見積もり、安すぎる？"], ["ai", "  ムツコさんに回しますね。"]],
+      [["cmd", "$ claude \"見積もりテンプレートを作って\""]],
+      [["cmd", "$ open estimate.xlsx"]],
+      [["bad", "✕ #REF! ─ 列を1本消したら全部壊れた"]],
+      [["ai", "  参照を名前付き範囲に置き換えます。"], ["good", "✓ fix: 参照を修正"]],
+      [["good", "✓ 壊れなくなった。"], ["you", "> よし、ついでにマクロも…"]]
+    ]
+  ];
+  const nodesG = $("#nodes"), orbG = $("#orbG");
+  let orbTurn = 0;
+  const NS = "http://www.w3.org/2000/svg";
+  const R = 150;
+  const nodeEls = STEPS.map((s, i) => {
+    const a = (i / STEPS.length) * Math.PI * 2 - Math.PI / 2;
+    const x = Math.cos(a) * R, y = Math.sin(a) * R;
+    const g = document.createElementNS(NS, "g");
+    g.setAttribute("class", "node" + (s.err ? " err" : ""));
+    g.innerHTML =
+      `<circle cx="${x}" cy="${y}" r="34"/>` +
+      `<text class="num" x="${x}" y="${y - 9}">0${i + 1} ${s.en}</text>` +
+      `<text x="${x}" y="${y + 12}">${s.jp}</text>`;
+    nodesG.appendChild(g);
+    return { g, x, y };
+  });
+  const termBody = $("#termBody"), term = $("#term");
+  let fail = 0, fix = 0, loopNo = 1, script = 0;
+  function trow(kind, text) {
+    const d = document.createElement("div");
+    d.className = "row " + kind;
+    d.textContent = text;
+    termBody.appendChild(d);
+    while (termBody.children.length > 11) termBody.firstChild.remove();
+  }
+  function orbTo(i) {
+    if (i === 0 && orbTurn % STEPS.length !== 0) orbTurn += STEPS.length - (orbTurn % STEPS.length);
+    else if (i !== 0) orbTurn = Math.floor(orbTurn / STEPS.length) * STEPS.length + i;
+    orbG.style.transform = `rotate(${orbTurn * 360 / STEPS.length}deg)`;
+  }
+  let labVisible = false;
+  async function labLoop() {
+    while (true) {
+      const sc = SCRIPTS[script % SCRIPTS.length];
+      $("#loopNo").textContent = "#" + String(loopNo).padStart(4, "0");
+      for (let i = 0; i < STEPS.length; i++) {
+        while (!labVisible) await sleep(400);
+        nodeEls.forEach((n, j) => n.g.classList.toggle("on", j === i));
+        orbTo(i);
+        $("#loopState").textContent = STEPS[i].st;
+        trow("step", `── 0${i + 1} ${STEPS[i].en} ──`);
+        for (const [k, t] of sc[i]) { await sleep(520); trow(k, t); }
+        if (STEPS[i].err) {
+          fail++; $("#cFail").textContent = fail;
+          term.classList.remove("err"); void term.offsetWidth; term.classList.add("err");
+        }
+        if (STEPS[i].en === "FIX") { fix++; $("#cFix").textContent = fix; }
+        await sleep(1500);
+      }
+      loopNo++; script++;
+    }
+  }
+  new IntersectionObserver(es => es.forEach(e => labVisible = e.isIntersecting), { threshold: .15 }).observe($("#lab"));
+  labLoop();
+
+  /* ---------- 細かい演出 ---------- */
+  // 時計
+  const clock = $("#clock");
+  const tick = () => clock.textContent = new Date().toLocaleTimeString("ja-JP", { hour12: false });
+  tick(); setInterval(tick, 1000);
+  // ビルド番号（その日の経過分から算出）
+  const now = new Date();
+  $("#build").textContent = "#" + String(now.getHours() * 60 + now.getMinutes() + 1000).padStart(4, "0");
+  // 「違う違う」カウンター（ときどき増える）
+  let nope = 12;
+  setInterval(() => { if (Math.random() < .35) $("#nope").innerHTML = (++nope) + "<small>回</small>"; }, 9000);
+  // 休憩室の看板
+  const TOPICS = ["雑談", "昨日の夢", "定時の定義", "日本酒", "次に作るもの", "猫"];
+  let coffee = 3, topic = 0;
+  setInterval(() => {
+    $("#topic").textContent = TOPICS[++topic % TOPICS.length];
+    if (topic % 3 === 0) $("#coffee").textContent = ++coffee;
+  }, 6000);
+
+  /* ---------- シナリオ部隊：直列稼働（1体ずつ順番に） ---------- */
+  const sqGrid = $("#squadGrid"), sqLine = $("#sqLine"), sqDoc = $("#sqDoc");
+  const sqEls = SQUAD.map(id => sqGrid.querySelector(`[data-id="${id}"]`));
+  const padX = el => { const r = el.querySelector(".pad").getBoundingClientRect(); return r.left + r.width / 2; };
+  let cur = 0;
+  function placeDoc() {
+    sqDoc.style.transform = `translateX(${padX(sqEls[cur]) - padX(sqEls[0])}px)`;
+  }
+  function layoutSquad() {
+    const g = sqGrid.getBoundingClientRect();
+    const a = sqEls[0].querySelector(".pad").getBoundingClientRect();
+    sqLine.style.top = (a.top + a.height / 2 - g.top) + "px";
+    sqLine.style.left = (padX(sqEls[0]) - g.left) + "px";
+    sqLine.style.width = (padX(sqEls[sqEls.length - 1]) - padX(sqEls[0])) + "px";
+    placeDoc();
+  }
+  requestAnimationFrame(layoutSquad);
+  addEventListener("load", layoutSquad);
+  addEventListener("resize", layoutSquad);
+  let pv = 0, draft = 12, hold = 0, squadVisible = false;
+  new IntersectionObserver(es => es.forEach(e => squadVisible = e.isIntersecting), { threshold: .1 }).observe($("#squad"));
+  function paintSquad() {
+    sqEls.forEach((el, i) => {
+      const v = i < cur ? 100 : i === cur ? Math.min(100, pv) : 0;
+      const bar = el.querySelector(".prog"), pct = el.querySelector(".pct");
+      bar.querySelector("i").style.width = v + "%";
+      bar.classList.toggle("full", v >= 100);
+      pct.classList.toggle("full", v >= 100);
+      pct.classList.toggle("wait", i > cur);
+      pct.textContent = v >= 100 ? "完了 → 次へ" : i === cur ? `${CHARS[SQUAD[i]].busy} ${v}%` : "待機中";
+      el.classList.toggle("is-busy", i === cur && v < 100);
+    });
+    $("#sqStage").textContent = `${String(cur + 1).padStart(2, "0")} / ${String(sqEls.length).padStart(2, "0")}`;
+    placeDoc();
+  }
+  paintSquad();
+  setInterval(() => {
+    if (!squadVisible) return;
+    if (hold > 0) {                       // 全工程完了 → 少し見せてから次の稿へ
+      if (--hold === 0) { cur = 0; pv = 0; paintSquad(); }
+      return;
+    }
+    pv += 6 + Math.floor(Math.random() * 9);
+    if (pv >= 100) {
+      pv = 100;
+      paintSquad();
+      if (cur < sqEls.length - 1) { cur++; pv = 0; }
+      else { $("#sqDraft").textContent = "v" + (++draft); hold = 3; return; }
+    }
+    paintSquad();
+  }, 900);
+  const sqStart = Date.now() - 1000 * (3600 * 2 + 60 * 17);
+  const upTick = () => {
+    const t = Math.floor((Date.now() - sqStart) / 1000);
+    $("#sqTime").textContent = [t / 3600, (t / 60) % 60, t % 60].map(n => String(Math.floor(n)).padStart(2, "0")).join(":");
+  };
+  upTick(); setInterval(upTick, 1000);
+
+  // スクロール出現
+  const io = new IntersectionObserver(es => es.forEach(e => {
+    if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); if (e.target.id === "stageScroll") layoutWire(); if (e.target.id === "squadGrid") layoutSquad(); }
+  }), { threshold: .12 });
+  document.querySelectorAll(".rv").forEach(el => io.observe(el));
+
+  /* ---------- 起動演出（1セッション1回） ---------- */
+  const boot = $("#boot"), bt = $("#bootText");
+  let seen = false;
+  try { seen = sessionStorage.getItem("backside-boot") === "1"; } catch (_) {}
+  const endBoot = () => { boot.classList.add("done"); try { sessionStorage.setItem("backside-boot", "1"); } catch (_) {} };
+  if (seen || reduce) { boot.classList.add("done"); }
+  else {
+    boot.addEventListener("click", endBoot);
+    const L = [
+      "> 表面を閉じています ........ <span class=ok>OK</span>",
+      "> 裏口の鍵を確認 ............ <span class=ok>OK</span>",
+      "> エージェント 5名 起動 ...... <span class=ok>ONLINE</span>",
+      "> シナリオ部隊 6体 直列稼働 ... <span class=ok>ONLINE</span>",
+      "> 休憩室 .................... <span class=ok>OPEN</span>",
+      "> ようこそ、裏側へ。"
+    ];
+    (async () => {
+      for (const l of L) { bt.innerHTML += l + "\n"; await sleep(260); }
+      await sleep(450); endBoot();
+    })();
+  }
+})();
+</script>
+</body>
+</html>
