@@ -714,6 +714,7 @@ const SHOW = {
 
 // ---------- WORKS ----------
 // image : 一覧カードのサムネイル画像パス（空なら仮表示）
+// imagePos : サムネイルの切り抜き位置（"top" / "center" / "bottom" など。省略時は中央）
 // media : 詳細モーダルの上部。{type:"image", src:""} / {type:"video", src:""} / {type:"youtube", id:"動画ID"}
 // links : [{label:"アプリを開く", url:"https://..."}]  未設定なら非表示
 // video : 詳細モーダル内の実演動画。{type:"video", src:"", srcWebm:"", poster:"", duration:""}
@@ -752,9 +753,10 @@ const WORKS = [
       "ヒアリングから社内調整までを、何度でも疑似体験できるアプリになっています。"
     ],
     features: ["複数キャラクターとの対話", "ヒアリング", "課題整理", "PoC", "社内調整"],
-    image: "assets/video/strategist.jpg",
+    image: "assets/image/strategist-menu.jpg",
+    imagePos: "top",   // 一覧カードは横長に切り抜かれるので、画像の上側（タイトル側）を見せる
     media: { type: "image", src: "" },
-    video: { type: "video", src: "assets/video/strategist.mp4", srcWebm: "assets/video/strategist.webm", poster: "assets/video/strategist.jpg", duration: "0:41" },
+    video: { type: "video", src: "assets/video/strategist.mp4", srcWebm: "assets/video/strategist.webm", poster: "assets/image/strategist-menu.jpg", duration: "0:41" },
     links: []
   },
   {
@@ -975,7 +977,7 @@ const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt
 const workGrid = document.getElementById("workGrid");
 WORKS.filter(w => !w.hidden).forEach((w, i) => {
   const thumb = w.image
-    ? `<div class="thumb"><img src="${esc(w.image)}" alt="${esc(w.title)}" loading="lazy"></div>`
+    ? `<div class="thumb"><img src="${esc(w.image)}" alt="${esc(w.title)}" loading="lazy"${w.imagePos ? ` style="object-position:${esc(w.imagePos)}"` : ""}></div>`
     : (SHOW.workThumbPlaceholder ? `<div class="thumb"><span class="ph">${ICONS.image}画面キャプチャ / デモ動画</span></div>` : "");
   const impact = w.impact
     ? `<div class="impact"><b>${esc(w.impact.number)}</b><span>${esc(w.impact.label)}</span><b>${esc(w.impact.after)}</b></div>`
